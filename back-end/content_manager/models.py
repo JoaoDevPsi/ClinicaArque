@@ -4,7 +4,7 @@ import uuid
 class Article(models.Model):
     id = models.CharField(max_length=50, primary_key=True, unique=True, default=uuid.uuid4)
     title = models.CharField(max_length=200)
-    excerpt = models.TextField(max_length=300)
+    excerpt = models.TextField()
     content = models.TextField()
     image = models.ImageField(upload_to='articles/')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -20,11 +20,7 @@ class GalleryPost(models.Model):
     id = models.CharField(max_length=50, primary_key=True, unique=True, default=uuid.uuid4)
     post_type = models.CharField(max_length=10, choices=[('single', 'Imagem Única'), ('carousel', 'Carrossel')])
     link = models.URLField(max_length=500, blank=True, null=True)
-    
-    # NOVO CAMPO: Imagem principal para posts 'single'
-    # Esta imagem será usada quando post_type for 'single'
     image_main = models.ImageField(upload_to='gallery_main_images/', blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

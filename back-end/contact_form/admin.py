@@ -1,4 +1,3 @@
-# back-end/contact_form/admin.py
 from django.contrib import admin
 from .models import ContactSubmission
 

@@ -97,7 +97,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        # AQUI ESTÁ A CORREÇÃO: Usar sua nova classe de autenticação
         'project_arque.authentication.jwt_authentication.FormDataJWTAuthentication', 
         'rest_framework.authentication.SessionAuthentication',
     ),
@@ -139,5 +138,5 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'clinicaarque.psi@gmail.com' 
-EMAIL_HOST_PASSWORD = 'SUA_SENHA_DE_APLICATIVO_DO_GMAIL' 
+EMAIL_HOST_PASSWORD = 'phaj yhsg etez jyxn' 
 DEFAULT_FROM_EMAIL = 'clinicaarque.psi@gmail.com'

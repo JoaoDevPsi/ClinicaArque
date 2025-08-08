@@ -1,4 +1,3 @@
-# back-end/project_arque/content_manager/admin.py
 from django.contrib import admin
 from .models import Article, GalleryPost, GalleryImage
 
@@ -16,15 +15,15 @@ class ArticleAdmin(admin.ModelAdmin):
 
 @admin.register(GalleryPost)
 class GalleryPostAdmin(admin.ModelAdmin):
-    list_display = ('id', 'post_type', 'image_main', 'link', 'created_at') # Adicione 'image_main'
+    list_display = ('id', 'post_type', 'image_main', 'link', 'created_at')
     list_filter = ('post_type',)
     search_fields = ('id', 'link')
     inlines = [GalleryImageInline]
-    fieldsets = ( # Organize os campos no admin
+    fieldsets = (
         (None, {
-            'fields': ('id', 'post_type', 'link', 'image_main') 
+            'fields': ('id', 'post_type', 'link', 'image_main')
         }),
-        ('Datas e Metadados', { # Renomeado para clareza
+        ('Datas e Metadados', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
         }),

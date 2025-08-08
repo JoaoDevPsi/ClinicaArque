@@ -1,60 +1,54 @@
-# back-end/project_arque/content_manager/serializers.py
 import json
 from rest_framework import serializers
 from .models import Article, GalleryPost, GalleryImage
+from contact_form.models import ContactSubmission
 
 class GalleryImageSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(use_url=True)
+    image = serializers.ImageField(use_url=True, required=False, allow_null=True)
 
     class Meta:
         model = GalleryImage
-        fields = ['image', 'alt_text', 'link', 'order']
+        fields = ['id', 'image', 'alt_text', 'link', 'order']
+        read_only_fields = ['id']
 
 class GalleryPostSerializer(serializers.ModelSerializer):
-    images = GalleryImageSerializer(many=True, read_only=True)
+    images = GalleryImageSerializer(many=True, required=False)
 
     class Meta:
         model = GalleryPost
-        # Adicione 'image_main' aos fields que o serializer deve lidar
         fields = ['id', 'post_type', 'link', 'image_main', 'images', 'created_at', 'updated_at']
-        read_only_fields = ['images', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
     def create(self, validated_data):
+        validated_data.pop('images', None) 
+        
         images_meta_str = self.context['request'].data.get('images_meta', '[]')
         images_meta = json.loads(images_meta_str) if isinstance(images_meta_str, str) else images_meta_str
-
-        # --- Lógica para image_main para tipo 'single' ---
-        # O arquivo 'image' para posts single vem diretamente no request.FILES
-        image_main_file = self.context['request'].FILES.get('image') 
-        # O valor do campo 'image' pode ser uma URL se o usuário colou
-        image_main_url_from_data = validated_data.get('image')
+        
+        image_main_file = self.context['request'].FILES.get('image_main')
+        image_main_url = validated_data.get('image_main') 
 
         gallery_post = GalleryPost.objects.create(
-            id=validated_data.get('id', None),
             post_type=validated_data['post_type'],
             link=validated_data.get('link'),
-            # Salva a imagem principal: prioriza o arquivo, senão a URL (se existir e não for blob:)
-            image_main=image_main_file if image_main_file else (image_main_url_from_data if image_main_url_from_data and not image_main_url_from_data.startswith('blob:') else None)
+            image_main=image_main_file or image_main_url
         )
 
-        # Processa e cria GalleryImages APENAS se for carrossel
         if gallery_post.post_type == 'carousel':
             for idx, img_meta in enumerate(images_meta):
                 image_file_key = f'images_files[{idx}]'
                 image_file = self.context['request'].FILES.get(image_file_key)
-
+                
+                image_to_use = None
                 if image_file:
-                    GalleryImage.objects.create(
-                        post=gallery_post,
-                        image=image_file,
-                        alt_text=img_meta.get('alt_text', ''),
-                        link=img_meta.get('link', ''),
-                        order=img_meta.get('order', idx)
-                    )
+                    image_to_use = image_file
                 elif 'image' in img_meta and img_meta['image'] and not img_meta['image'].startswith('blob:'):
+                    image_to_use = img_meta['image']
+
+                if image_to_use:
                     GalleryImage.objects.create(
                         post=gallery_post,
-                        image=img_meta['image'],
+                        image=image_to_use,
                         alt_text=img_meta.get('alt_text', ''),
                         link=img_meta.get('link', ''),
                         order=img_meta.get('order', idx)
@@ -65,49 +59,72 @@ class GalleryPostSerializer(serializers.ModelSerializer):
         instance.post_type = validated_data.get('post_type', instance.post_type)
         instance.link = validated_data.get('link', instance.link)
 
-        # --- Lógica de atualização para image_main ---
-        image_main_file = self.context['request'].FILES.get('image')
-        image_main_url_from_data = validated_data.get('image') # Valor do campo 'image' vindo do request.data
+        new_image_file = self.context['request'].FILES.get('image_main')
+        new_image_url = validated_data.get('image_main') 
 
-        if image_main_file:
-            instance.image_main = image_main_file
-        elif image_main_url_from_data and not image_main_url_from_data.startswith('blob:'):
-            instance.image_main = image_main_url_from_data
-        elif 'image' in validated_data and validated_data['image'] is None: # Se a imagem foi explicitamente setada para None/null
+        if new_image_file:
+            instance.image_main = new_image_file
+        elif new_image_url and not new_image_url.startswith('blob:'):
+            instance.image_main = new_image_url
+        elif 'image_main' in self.context['request'].data and not self.context['request'].data['image_main']:
             instance.image_main = None
-        # else: Se o campo 'image' não foi enviado (nem como file, nem como url) e não foi null, mantém o valor existente no instance
 
         instance.save()
+        
+        validated_data.pop('images', None)
 
-        if 'images_meta' in self.context['request'].data: # APENAS se for carrossel e meta de imagens foi enviado
-            instance.images.all().delete() 
+        if instance.post_type == 'carousel':
+            instance.images.all().delete()
 
             images_meta_str = self.context['request'].data.get('images_meta', '[]')
             images_meta = json.loads(images_meta_str) if isinstance(images_meta_str, str) else images_meta_str
-
+            
             for idx, img_meta in enumerate(images_meta):
                 image_file_key = f'images_files[{idx}]'
                 image_file = self.context['request'].FILES.get(image_file_key)
-
+                
+                image_to_use = None
                 if image_file:
-                    GalleryImage.objects.create(
-                        post=instance,
-                        image=image_file,
-                        alt_text=img_meta.get('alt_text', ''),
-                        link=img_meta.get('link', ''),
-                        order=img_meta.get('order', idx)
-                    )
+                    image_to_use = image_file
                 elif 'image' in img_meta and img_meta['image'] and not img_meta['image'].startswith('blob:'):
+                    image_to_use = img_meta['image']
+
+                if image_to_use:
                     GalleryImage.objects.create(
                         post=instance,
-                        image=img_meta['image'],
+                        image=image_to_use,
                         alt_text=img_meta.get('alt_text', ''),
                         link=img_meta.get('link', ''),
-                        order=img_meta.get('order', idx)
+                        order=idx
                     )
         return instance
+
 
 class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'excerpt', 'content', 'image', 'created_at', 'updated_at']
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.excerpt = validated_data.get('excerpt', instance.excerpt)
+        instance.content = validated_data.get('content', instance.content)
+
+        new_image_file = self.context['request'].FILES.get('image')
+        new_image_url = validated_data.get('image')
+
+        if new_image_file:
+            instance.image = new_image_file
+        elif new_image_url:
+            instance.image = new_image_url
+        elif 'image' in self.context['request'].data and not self.context['request'].data['image']:
+            instance.image = None
+        
+        instance.save()
+        return instance
+
+class ContactSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactSubmission
+        fields = ['id', 'name', 'email', 'phone', 'message', 'submitted_at']
+        read_only_fields = ['id', 'submitted_at']

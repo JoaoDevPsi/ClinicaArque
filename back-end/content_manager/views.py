@@ -1,5 +1,4 @@
-# back-end/content_manager/views.py
-import json # Certifique-se de que 'json' está importado no topo
+import json
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -34,7 +33,6 @@ class GalleryPostViewSet(viewsets.ModelViewSet):
             self.permission_classes = [AllowAny]
         return super().get_permissions()
 
-    # AQUI ESTÃO AS LINHAS DE DEBUG
     def create(self, request, *args, **kwargs):
         print("\n--- DEBUG: Requisição POST para GalleryPost ---")
         print(f"Método HTTP: {request.method}")
@@ -45,17 +43,10 @@ class GalleryPostViewSet(viewsets.ModelViewSet):
         print(f"Cabeçalho Authorization: {request.headers.get('Authorization')}")
         print("--- FIM DEBUG ---\n")
 
-        # Continuar com a lógica de criação (chamar o ModelViewSet.create original)
-        # Você tinha customizado o create, então vamos manter a lógica atual.
-        # Se você usar o padrão do ModelViewSet, basta remover esta função e as prints.
-        # Mas para o teste, precisamos que ela execute.
+        images_meta = []
 
-        # Lógica personalizada para criar GalleryPost com GalleryImage aninhadas
-        images_meta = [] 
-
-        # Lógica para image_main para tipo 'single'
-        image_main_file = request.FILES.get('image_main') 
-        image_main_url_from_data = request.data.get('image_main') 
+        image_main_file = request.FILES.get('image_main')
+        image_main_url_from_data = request.data.get('image_main')
 
         gallery_post = GalleryPost.objects.create(
             id=request.data.get('id', None),
@@ -69,7 +60,7 @@ class GalleryPostViewSet(viewsets.ModelViewSet):
             images_meta = json.loads(images_meta_str) if isinstance(images_meta_str, str) else images_meta_str
             for idx, img_meta in enumerate(images_meta):
                 image_file_key = f'images_files[{idx}]'
-                image_file = request.FILES.get(image_file_key) 
+                image_file = request.FILES.get(image_file_key)
 
                 if image_file:
                     GalleryImage.objects.create(
@@ -88,14 +79,11 @@ class GalleryPostViewSet(viewsets.ModelViewSet):
                         order=img_meta.get('order', idx)
                     )
 
-        serializer = self.get_serializer(instance=gallery_post) # Serializa a instância criada
+        serializer = self.get_serializer(instance=gallery_post)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    # O método 'update' também deve ser ajustado para incluir os prints de debug se quiser depurá-lo
-    # (Mas vamos focar no create por enquanto)
     def update(self, request, *args, **kwargs):
-        # Adicione prints de debug aqui também se for testar o PUT
         print("\n--- DEBUG: Requisição PUT para GalleryPost ---")
         print(f"Request data PUT:", request.data)
         print(f"Request files PUT:", request.FILES)
@@ -103,5 +91,4 @@ class GalleryPostViewSet(viewsets.ModelViewSet):
         print(f"Cabeçalho Authorization PUT:", request.headers.get('Authorization'))
         print("--- FIM DEBUG PUT ---\n")
 
-        # Chama o método update original do superclass ModelViewSet
-        return super().update(request, *args, **kwargs) # Ou o seu método update customizado
+        return super().update(request, *args, **kwargs)
