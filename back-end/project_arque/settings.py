@@ -6,9 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-3-6yj3j$8)wiamuwd-f^2wjk0i&v0+6o3p8!pzlam98i7#a=8^'
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'api.clinicaarquepsi.com.br', 'joaodevpsi.pythonanywhere.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -88,7 +88,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    'https://clinicaarquepsi.com.br',
+]
 
 CORS_URLS_REGEX = r'^/api/.*$'
 
